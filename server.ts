@@ -16,7 +16,7 @@ const db = new sqlite3.Database(DATABASE);
 
 app.get("/api/events", (_, res) => {
   db.all(
-    "SELECT * FROM events ORDER BY event_date ASC, start_time ASC",
+    "SELECT * FROM events ORDER BY date ASC, start_time ASC",
     [],
     (err, rows) => {
       if (err) {
