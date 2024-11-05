@@ -1,32 +1,32 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import sqlite3 from "sqlite3";
+import { serveDir, serveFile } from "@std/http/file-server";
 
-dotenv.config();
+Deno.serve(async (req) => {
+  const pathname = new URL(req.url).pathname;
 
-const app = express();
-const PORT = process.env.PORT || 5000;
-const DATABASE = process.env.DATABASE!;
-
-app.use(cors({ origin: "https://cybersec-ucalgary.club" }));
-app.use(express.json());
-
-const db = new sqlite3.Database(DATABASE);
-
-app.get("/api/events", (_, res) => {
-  db.all(
-    "SELECT * FROM events ORDER BY date ASC, start_time ASC",
-    [],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
+  if (pathname === "/docs" || pathname === "/docs/") {
+    const docsPath = `${Deno.cwd()}/docs`;
+    const files = [];
+    for await (const dirEntry of Deno.readDir(docsPath)) {
+      if (!dirEntry.isDirectory) {
+        files.push(dirEntry.name);
       }
-      res.json(rows);
-    },
-  );
-});
+    }
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+    const response = new Response(JSON.stringify(files), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*", 
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        },
+      });
+
+    return response;
+  } else if (pathname.startsWith("/docs/")) {
+    const docsPath = `${Deno.cwd()}/docs`;
+    const filePath = `${docsPath}/${pathname.slice(6)}`;
+    return await serveFile(req, filePath);
+  }
+
+  return new Response();
 });
