@@ -1,6 +1,8 @@
 import { serveFile } from "@std/http/file-server";
 import { config } from "https://deno.land/x/dotenv/mod.ts";
 
+import { hash, verify } from "@ts-rex/bcrypt"
+
 // Load environment variables
 const env = config();
 const USERNAME = env.USERNAME;
@@ -114,10 +116,10 @@ Deno.serve(async (req) => {
   // Handle login
   if (req.method === "POST" && pathname === "/login") {
     try {
-      const { username, password: hashedPassword } = await req.json();
+      const { username, password: password } = await req.json();
 
       // Validate username and hashed password
-      if (username === USERNAME && hashedPassword === HASHED_PASSWORD) {
+      if (username === USERNAME && verify(password, HASHED_PASSWORD)) {
         const response = new Response(JSON.stringify({ success: true }), {
           headers: { "Content-Type": "application/json" },
           status: 200,
