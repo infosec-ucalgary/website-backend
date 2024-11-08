@@ -40,7 +40,7 @@ async function generateUniqueFilename(filename: string) {
 }
 
 function addCORS(response: Response) {
-  response.headers.set("Access-Control-Allow-Origin", "http://localhost:5173");
+  response.headers.set("Access-Control-Allow-Origin", "https://cybersec-ucalgary.club");
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE");
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   return response;
