@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
       const category = formData.get("category") as string;
       const description = formData.get("description") as string;
 
-      if (!file || !title || !category || !description) {
+      if (!file || !title || !category || !description || file.name.includes("/") || file.name.includes("..")) {
         return addCORS(new Response("Missing title, category, description, or file", { status: 400 }));
       }
 
