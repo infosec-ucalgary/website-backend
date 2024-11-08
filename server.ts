@@ -40,6 +40,7 @@ async function generateUniqueFilename(filename: string) {
 }
 
 function addCORS(response: Response) {
+  // response.headers.set("Access-Control-Allow-Origin", "http://localhost:5173");
   response.headers.set("Access-Control-Allow-Origin", "https://cybersec-ucalgary.club");
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE");
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -56,9 +57,9 @@ Deno.serve(async (req) => {
   // Handle delete request
   if (req.method === "POST" && pathname === "/docs/delete") {
     try {
-      const { title, category, description } = await req.json();
+      const { title, author, category, description } = await req.json();
 
-      if (!title || !category || !description) {
+      if (!title || !author || !category || !description) {
         return addCORS(new Response("Missing required fields", { status: 400 }));
       }
 
@@ -69,6 +70,7 @@ Deno.serve(async (req) => {
       const entryIndex = info.findIndex(
         (entry: any) => 
           entry.title === title && 
+          entry.author === author &&
           entry.category === category && 
           entry.description === description
       );
@@ -140,11 +142,12 @@ Deno.serve(async (req) => {
       const formData = await req.formData();
       const file = formData.get("file") as File;
       const title = formData.get("title") as string;
+      const author = formData.get("author") as string;
       const category = formData.get("category") as string;
       const description = formData.get("description") as string;
 
-      if (!file || !title || !category || !description || file.name.includes("/") || file.name.includes("..")) {
-        return addCORS(new Response("Missing title, category, description, or file", { status: 400 }));
+      if (!file || !title || !author || !category || !description || file.name.includes("/") || file.name.includes("..")) {
+        return addCORS(new Response("Missing title, author, category, description, or file", { status: 400 }));
       }
 
       // Load existing info
@@ -153,6 +156,7 @@ Deno.serve(async (req) => {
       // Check if an entry with the same title, description, and category exists
       const existingEntry = info.find(
         (entry: any) => entry.title === title && 
+                       entry.author === author &&
                        entry.description === description && 
                        entry.category === category
       );
@@ -175,7 +179,8 @@ Deno.serve(async (req) => {
         finalFilename = await generateUniqueFilename(file.name);
         // Add new entry to info
         info.push({ 
-          title, 
+          title,
+          author, 
           description, 
           category, 
           filename: finalFilename 
