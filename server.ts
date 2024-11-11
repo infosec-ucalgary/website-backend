@@ -7,8 +7,8 @@ import { hash, verify } from "@ts-rex/bcrypt"
 const env = config();
 const USERNAME = env.USERNAME;
 const HASHED_PASSWORD = env.PASSWORD; // Pre-hashed password in .env
-const docsPath = `${Deno.cwd()}/docs`;
-const infoFilePath = `${docsPath}/info.json`;
+const writeupsPath = `${Deno.cwd()}/writeups`;
+const infoFilePath = `${writeupsPath}/info.json`;
 
 // Helper function to load `info.json`
 async function loadInfoFile() {
@@ -32,7 +32,7 @@ async function generateUniqueFilename(filename: string) {
   const extension = filename.includes('.') ? filename.split('.').pop() : '';
   const baseName = filename.includes('.') ? filename.slice(0, filename.lastIndexOf('.')) : filename;
   
-  while (await Deno.stat(`${docsPath}/${uniqueFilename}`).catch(() => false)) {
+  while (await Deno.stat(`${writeupsPath}/${uniqueFilename}`).catch(() => false)) {
     uniqueFilename = `${baseName}_${counter}${extension ? '.' + extension : ''}`;
     counter++;
   }
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
   }
 
   // Handle delete request
-  if (req.method === "POST" && pathname === "/docs/delete") {
+  if (req.method === "POST" && pathname === "/writeups/delete") {
     try {
       const { title, author, category, description } = await req.json();
 
@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
 
       // Delete the physical file
       try {
-        await Deno.remove(`${docsPath}/${filename}`);
+        await Deno.remove(`${writeupsPath}/${filename}`);
       } catch (error) {
         console.error("Error deleting file:", error);
         return addCORS(new Response("Error deleting file", { status: 500 }));
@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
   }
 
   // Handle file upload
-  if (req.method === "POST" && pathname === "/docs/upload") {
+  if (req.method === "POST" && pathname === "/writeups/upload") {
     try {
       const formData = await req.formData();
       const file = formData.get("file") as File;
@@ -148,6 +148,13 @@ Deno.serve(async (req) => {
 
       if (!file || !title || !author || !category || !description || file.name.includes("/") || file.name.includes("..")) {
         return addCORS(new Response("Missing title, author, category, description, or file", { status: 400 }));
+      }
+
+      // Check if the file is either .md or .txt
+      const allowedExtensions = ['md', 'txt'];
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+        return addCORS(new Response("Invalid file type. Only .md and .txt files are allowed.", { status: 400 }));
       }
 
       // Load existing info
@@ -166,7 +173,7 @@ Deno.serve(async (req) => {
       if (existingEntry) {
         // Delete old file if exists
         try {
-          await Deno.remove(`${docsPath}/${existingEntry.filename}`);
+          await Deno.remove(`${writeupsPath}/${existingEntry.filename}`);
         } catch (error) {
           console.error("Error deleting old file:", error);
         }
@@ -192,7 +199,7 @@ Deno.serve(async (req) => {
 
       // Write the file with the final filename
       const fileContent = await file.arrayBuffer();
-      const filePath = `${docsPath}/${finalFilename}`;
+      const filePath = `${writeupsPath}/${finalFilename}`;
       await Deno.writeFile(filePath, new Uint8Array(fileContent));
 
       return addCORS(new Response(JSON.stringify({
@@ -214,8 +221,8 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Serve info.json at /docs
-  if (pathname === "/docs" || pathname === "/docs/") {
+  // Serve info.json at /writeups
+  if (pathname === "/writeups" || pathname === "/writeups/") {
     const info = await loadInfoFile();
     const response = new Response(JSON.stringify(info), {
       headers: { "Content-Type": "application/json" },
@@ -224,8 +231,9 @@ Deno.serve(async (req) => {
   }
 
   // Serve individual file content
-  if (pathname.startsWith("/docs/")) {
-    const filePath = `${docsPath}/${decodeURIComponent(pathname.slice(6))}`;
+  if (pathname.startsWith("/writeups/")) {
+    const filePath = `${writeupsPath}/${decodeURIComponent(pathname.slice(10))}`;
+    console.log(filePath);
     return addCORS(await serveFile(req, filePath));
   }
 
