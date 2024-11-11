@@ -289,7 +289,6 @@ Deno.serve(async (req) => {
   // Serve individual file content
   if (pathname.startsWith("/writeups/")) {
     const filePath = `${writeupsPath}/${decodeURIComponent(pathname.slice(10))}`;
-    console.log(filePath);
     return addCORS(await serveFile(req, filePath));
   }
 
