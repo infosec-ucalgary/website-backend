@@ -1,7 +1,7 @@
 import { serveFile } from "@std/http/file-server";
 import { config } from "https://deno.land/x/dotenv/mod.ts";
 
-import { hash, verify } from "@ts-rex/bcrypt"
+import { verify } from "@ts-rex/bcrypt";
 
 // Load environment variables
 const env = config();
@@ -29,11 +29,15 @@ async function saveInfoFile(info: any) {
 async function generateUniqueFilename(filename: string) {
   let uniqueFilename = filename;
   let counter = 0;
-  const extension = filename.includes('.') ? filename.split('.').pop() : '';
-  const baseName = filename.includes('.') ? filename.slice(0, filename.lastIndexOf('.')) : filename;
-  
-  while (await Deno.stat(`${writeupsPath}/${uniqueFilename}`).catch(() => false)) {
-    uniqueFilename = `${baseName}_${counter}${extension ? '.' + extension : ''}`;
+  const extension = filename.includes(".") ? filename.split(".").pop() : "";
+  const baseName = filename.includes(".")
+    ? filename.slice(0, filename.lastIndexOf("."))
+    : filename;
+
+  while (
+    await Deno.stat(`${writeupsPath}/${uniqueFilename}`).catch(() => false)
+  ) {
+    uniqueFilename = `${baseName}_${counter}${extension ? "." + extension : ""}`;
     counter++;
   }
   return uniqueFilename;
@@ -41,9 +45,18 @@ async function generateUniqueFilename(filename: string) {
 
 function addCORS(response: Response) {
   // response.headers.set("Access-Control-Allow-Origin", "http://localhost:5173");
-  response.headers.set("Access-Control-Allow-Origin", "https://cybersec-ucalgary.club");
-  response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE");
-  response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  response.headers.set(
+    "Access-Control-Allow-Origin",
+    "https://cybersec-ucalgary.club",
+  );
+  response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS, DELETE",
+  );
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization",
+  );
   return response;
 }
 
@@ -60,7 +73,9 @@ Deno.serve(async (req) => {
       const { title, author, category, description } = await req.json();
 
       if (!title || !author || !category || !description) {
-        return addCORS(new Response("Missing required fields", { status: 400 }));
+        return addCORS(
+          new Response("Missing required fields", { status: 400 }),
+        );
       }
 
       // Load existing info
@@ -68,11 +83,11 @@ Deno.serve(async (req) => {
 
       // Find the entry to delete
       const entryIndex = info.findIndex(
-        (entry: any) => 
-          entry.title === title && 
+        (entry: any) =>
+          entry.title === title &&
           entry.author === author &&
-          entry.category === category && 
-          entry.description === description
+          entry.category === category &&
+          entry.description === description,
       );
 
       if (entryIndex === -1) {
@@ -96,22 +111,32 @@ Deno.serve(async (req) => {
       // Save the updated info.json
       await saveInfoFile(info);
 
-      return addCORS(new Response(JSON.stringify({
-        success: true,
-        message: "Document deleted successfully"
-      }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      }));
+      return addCORS(
+        new Response(
+          JSON.stringify({
+            success: true,
+            message: "Document deleted successfully",
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          },
+        ),
+      );
     } catch (error) {
       console.error("Delete error:", error);
-      return addCORS(new Response(JSON.stringify({
-        success: false,
-        error: error.message
-      }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" }
-      }));
+      return addCORS(
+        new Response(
+          JSON.stringify({
+            success: false,
+            error: error.message,
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          },
+        ),
+      );
     }
   }
 
@@ -128,7 +153,9 @@ Deno.serve(async (req) => {
         });
         return addCORS(response);
       } else {
-        return addCORS(new Response("Invalid username or password", { status: 401 }));
+        return addCORS(
+          new Response("Invalid username or password", { status: 401 }),
+        );
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -146,15 +173,33 @@ Deno.serve(async (req) => {
       const category = formData.get("category") as string;
       const description = formData.get("description") as string;
 
-      if (!file || !title || !author || !category || !description || file.name.includes("/") || file.name.includes("..")) {
-        return addCORS(new Response("Missing title, author, category, description, or file", { status: 400 }));
+      if (
+        !file ||
+        !title ||
+        !author ||
+        !category ||
+        !description ||
+        file.name.includes("/") ||
+        file.name.includes("..")
+      ) {
+        return addCORS(
+          new Response(
+            "Missing title, author, category, description, or file",
+            { status: 400 },
+          ),
+        );
       }
 
       // Check if the file is either .md or .txt
-      const allowedExtensions = ['md', 'txt'];
-      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      const allowedExtensions = ["md", "txt"];
+      const fileExtension = file.name.split(".").pop()?.toLowerCase();
       if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-        return addCORS(new Response("Invalid file type. Only .md and .txt files are allowed.", { status: 400 }));
+        return addCORS(
+          new Response(
+            "Invalid file type. Only .md and .txt files are allowed.",
+            { status: 400 },
+          ),
+        );
       }
 
       // Load existing info
@@ -162,10 +207,11 @@ Deno.serve(async (req) => {
 
       // Check if an entry with the same title, description, and category exists
       const existingEntry = info.find(
-        (entry: any) => entry.title === title && 
-                       entry.author === author &&
-                       entry.description === description && 
-                       entry.category === category
+        (entry: any) =>
+          entry.title === title &&
+          entry.author === author &&
+          entry.description === description &&
+          entry.category === category,
       );
 
       let finalFilename: string;
@@ -185,12 +231,12 @@ Deno.serve(async (req) => {
         // Generate a unique filename for the new file
         finalFilename = await generateUniqueFilename(file.name);
         // Add new entry to info
-        info.push({ 
+        info.push({
           title,
-          author, 
-          description, 
-          category, 
-          filename: finalFilename 
+          author,
+          description,
+          category,
+          filename: finalFilename,
         });
       }
 
@@ -202,22 +248,32 @@ Deno.serve(async (req) => {
       const filePath = `${writeupsPath}/${finalFilename}`;
       await Deno.writeFile(filePath, new Uint8Array(fileContent));
 
-      return addCORS(new Response(JSON.stringify({
-        success: true,
-        filename: finalFilename
-      }), { 
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      }));
+      return addCORS(
+        new Response(
+          JSON.stringify({
+            success: true,
+            filename: finalFilename,
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          },
+        ),
+      );
     } catch (error) {
       console.error("Upload error:", error);
-      return addCORS(new Response(JSON.stringify({
-        success: false,
-        error: error.message
-      }), { 
-        status: 500,
-        headers: { "Content-Type": "application/json" }
-      }));
+      return addCORS(
+        new Response(
+          JSON.stringify({
+            success: false,
+            error: error.message,
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          },
+        ),
+      );
     }
   }
 
